@@ -141,18 +141,41 @@ function InterviewPage({ theme, toggleTheme }) {
     };
 
     const getFeedback = async () => {
-        setIsFeedbackLoading(true);
-        setError(null);
-        try {
-            const response = await fetch('http://localhost:3001/api/interview/feedback', { method: 'POST' });
-            if (!response.ok) throw new Error('Failed to get feedback from server.');
-            const data = await response.json();
-            setFeedback(data.feedback);
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setIsFeedbackLoading(false);
+    setIsFeedbackLoading(true);
+    setError(null);
+    
+    // 1. We need to collect the user's answers to send to the API.
+    const userAnswers = conversation
+        .filter(entry => entry.speaker === 'You')
+        .map((entry, index) => ({
+            question: currentQuestions[index], // `currentQuestions` is already in your component's state
+            answer: entry.text,
+        }));
+
+    try {
+        // 2. IMPORTANT: Replace this placeholder with your actual Vercel URL.
+        const API_ENDPOINT = 'ai-interviewer-backend-l4j3fow2y-omkars-projects-7073f668.vercel.app';
+        
+        // 3. The fetch call now needs to send the user's answers in the body.
+        const response = await fetch(API_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userAnswers }), // Send the collected answers
+        });
+
+        if (!response.ok) {
+            const errData = await response.json(); // Try to get a more detailed error from the server
+            throw new Error(errData.error || 'Failed to get feedback from server.');
         }
+        
+        const data = await response.json();
+        setFeedback(data.feedback);
+
+    } catch (err) {
+        setError(err.message);
+    } finally {
+        setIsFeedbackLoading(false);
+    }
     };
 
     const handleKeyPress = (e) => {
