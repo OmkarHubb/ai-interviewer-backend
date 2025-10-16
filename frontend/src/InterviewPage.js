@@ -149,38 +149,46 @@ function InterviewPage({ theme, toggleTheme }) {
         }, 1000);
     };
 
-    const getFeedback = async () => {
-        setIsFeedbackLoading(true);
-        setError(null);
-        
-        const userAnswers = conversation
-            .filter(entry => entry.speaker === 'You')
-            .map((entry, index) => ({
-                question: currentQuestions[index],
-                answer: entry.text,
-            }));
+// Replace it with this
+const getFeedback = async () => {
+    setIsFeedbackLoading(true);
+    setError(null);
+    
+    const userAnswers = conversation
+        .filter(entry => entry.speaker === 'You')
+        .map((entry, index) => ({
+            question: currentQuestions[index],
+            answer: entry.text,
+        }));
 
-        try {
-            // --- IMPORTANT: Replace this URL with your own Vercel URL ---
-            const API_ENDPOINT = 'https://ai-interviewer-backend-czpe6z0fp-omkars-projects-7073f668.vercel.app';
-            
-            const response = await fetch(API_ENDPOINT, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userAnswers }),
-            });
-            if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.error || 'Failed to get feedback from server.');
-            }
-            const data = await response.json();
-            setFeedback(data.feedback);
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setIsFeedbackLoading(false);
+    try {
+        // --- Make sure this is your correct Vercel URL ---
+        const API_ENDPOINT = 'https://ai-interviewer-backend-xi.vercel.app/api/feedback';
+        
+        const response = await fetch(API_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userAnswers }),
+        });
+
+        if (!response.ok) {
+            // Try to get a more detailed error message from the server's response
+            const errData = await response.json().catch(() => ({ error: 'Server returned a non-JSON error.' }));
+            throw new Error(errData.error || `Failed to get feedback from server. Status: ${response.status}`);
         }
-    };
+        
+        const data = await response.json();
+        setFeedback(data.feedback);
+
+    } catch (err) {
+        // --- THIS IS THE NEW LOGGING ---
+        // We will now log the full error object to the browser console.
+        console.error("Detailed Fetch Error:", err); 
+        setError(err.message); // Keep showing the simple error message on the UI
+    } finally {
+        setIsFeedbackLoading(false);
+    }
+};
 
     const handleKeyPress = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {

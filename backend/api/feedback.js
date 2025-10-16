@@ -25,7 +25,7 @@ module.exports = async (req, res) => {
 
     const { userAnswers } = req.body;
     const API_KEY = process.env.GEMINI_API_KEY;
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`;
 
     if (!userAnswers || userAnswers.length === 0) {
         return res.status(400).json({ error: "No interview answers provided." });
