@@ -1,21 +1,30 @@
-const express = require('express');
-const cors = require('cors');
-const fetch = require('node-fetch'); // We need this to make API calls from the server
+const fetch = require('node-fetch');
 
-const app = express();
-const corsMiddleware = cors();
+// This is the Vercel serverless function handler
+module.exports = async (req, res) => {
+    // --- Manually set CORS headers to allow requests from any website ---
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader(
+        'Access-Control-Allow-Headers',
+        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+    );
 
-app.use((req, res, next) => {
-    // Run CORS middleware
-    corsMiddleware(req, res, next);
-});
+    // The browser sends an OPTIONS request first to check permissions.
+    // We need to handle it and send a successful response.
+    if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
+    }
 
-app.use(express.json());
+    // --- Proceed with the actual POST request logic ---
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method Not Allowed' });
+    }
 
-// This is the only endpoint we need in this file
-app.post('/api/feedback', async (req, res) => {
-    const { userAnswers } = req.body; // We'll get the answers from the frontend
-    const API_KEY = process.env.GEMINI_API_KEY; // Vercel will provide this
+    const { userAnswers } = req.body;
+    const API_KEY = process.env.GEMINI_API_KEY;
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
 
     if (!userAnswers || userAnswers.length === 0) {
@@ -44,13 +53,10 @@ app.post('/api/feedback', async (req, res) => {
         const data = await apiResponse.json();
         const feedback = data.candidates[0].content.parts[0].text;
         
-        res.json({ feedback });
+        res.status(200).json({ feedback });
 
     } catch (error) {
-        console.error("Error generating AI feedback:", error);
-        res.status(500).json({ error: "Failed to get feedback from AI." });
+        console.error("Error in serverless function:", error);
+        res.status(500).json({ error: "Internal server error." });
     }
-});
-
-// Vercel handles the server listening, so we don't need app.listen()
-module.exports = app;
+};
