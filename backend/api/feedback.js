@@ -1,10 +1,10 @@
 const fetch = require('node-fetch');
 
-// This is the Vercel serverless function handler
+// This is the Vercel serverless function handler.
 module.exports = async (req, res) => {
     // --- Manually set CORS headers to allow requests from any website ---
     res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Origin', '*'); // Allows all origins
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
     res.setHeader(
         'Access-Control-Allow-Headers',
@@ -12,7 +12,7 @@ module.exports = async (req, res) => {
     );
 
     // The browser sends an OPTIONS request first to check permissions.
-    // We need to handle it and send a successful response.
+    // We need to handle this "preflight" request and send a successful response.
     if (req.method === 'OPTIONS') {
         res.status(200).end();
         return;
